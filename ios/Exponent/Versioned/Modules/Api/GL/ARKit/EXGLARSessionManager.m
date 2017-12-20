@@ -22,6 +22,7 @@
 @property (nonatomic, assign) EXGLView *glView;
 @property (atomic, strong) ARSession *arSession;
 @property (atomic, strong) ARWorldTrackingConfiguration *arConfig;
+
 @end
 
 @implementation EXGLARSessionManager
@@ -48,7 +49,7 @@ static GLfloat arCamVerts[] = { -2.0f, 0.0f, 0.0f, -2.0f, 2.0f, 2.0f };
              };
   }
   [self.arSession runWithConfiguration:self.arConfig];
-  
+
   CVReturn err = CVOpenGLESTextureCacheCreate(kCFAllocatorDefault, NULL, _glView.eaglCtx, NULL, &_arCamCache);
   if (err) {
     NSLog(@"Error from CVOpenGLESTextureCacheCreate(...): %d", err);
@@ -183,10 +184,11 @@ static GLfloat arCamVerts[] = { -2.0f, 0.0f, 0.0f, -2.0f, 2.0f, 2.0f };
 - (void)setIsPlaneDetectionEnabled:(BOOL)isPlaneDetectionEnabled
 {
   _isPlaneDetectionEnabled = isPlaneDetectionEnabled;
+  ARWorldTrackingConfiguration *configuration = (ARWorldTrackingConfiguration *) self.arSession.configuration;
   if (isPlaneDetectionEnabled) {
-    self.arConfig.planeDetection = ARPlaneDetectionHorizontal;
+    configuration.planeDetection = ARPlaneDetectionHorizontal;
   } else {
-    self.arConfig.planeDetection = ARPlaneDetectionNone;
+    configuration.planeDetection = ARPlaneDetectionNone;
   }
   [self _reload];
 }
@@ -194,16 +196,11 @@ static GLfloat arCamVerts[] = { -2.0f, 0.0f, 0.0f, -2.0f, 2.0f, 2.0f };
 - (void)setIsLightEstimationEnabled:(BOOL)isLightEstimationEnabled
 {
   _isLightEstimationEnabled = isLightEstimationEnabled;
-  self.arConfig.lightEstimationEnabled = isLightEstimationEnabled;
+  ARWorldTrackingConfiguration *configuration = (ARWorldTrackingConfiguration *) self.arSession.configuration;
+  configuration.lightEstimationEnabled = isLightEstimationEnabled;
   [self _reload];
 }
 
-- (void)setWorldAlignment:(NSInteger)worldAlignment
-{
-  _worldAlignment = worldAlignment;
-  self.arConfig.worldAlignment = worldAlignment;
-  [self _reload];
-}
 
 - (void)_reload
 {
@@ -251,42 +248,6 @@ static GLfloat arCamVerts[] = { -2.0f, 0.0f, 0.0f, -2.0f, 2.0f, 2.0f };
            };
 }
 
-- (NSDictionary *)planes
-{
-  if (!self.arSession) {
-    return nil;
-  }
-  
-  NSArray<ARAnchor *> *anchors = self.arSession.currentFrame.anchors;
-  NSMutableArray *planes = [NSMutableArray array];
-  
-  for (int i = 0; i < anchors.count; i++) {
-    if ([anchors[i] isKindOfClass:[ARPlaneAnchor class]]){
-      ARPlaneAnchor *planeAnchor = (ARPlaneAnchor *)anchors[i];
-      vector_float3 extent = planeAnchor.extent;
-      vector_float3 center = planeAnchor.center;
-
-      [planes addObject:@{
-                          @"center": @{
-                              @"x": @(center[0]),
-                              @"y": @(center[1]),
-                              @"z": @(center[2])
-                              },
-                          @"extent": @{
-                              @"width": @(extent[0]),
-                              @"length": @(extent[2])
-                              },
-                          @"id": [NSString stringWithFormat:@"%@", planeAnchor.identifier],
-                          @"transform": [EXGLARSessionManager nsArrayForMatrix: planeAnchor.transform]
-                          }];
-    }
-  }
-  
-  return @{
-           @"planes": planes
-           };
-}
-
 - (void)updateARCamTexture
 {
   if (!self.arSession) {
@@ -305,7 +266,7 @@ static GLfloat arCamVerts[] = { -2.0f, 0.0f, 0.0f, -2.0f, 2.0f, 2.0f };
 
   glBindFramebuffer(GL_FRAMEBUFFER, _arCamOutputFramebuffer);
   glViewport(0, 0, 1280, 720);
-  
+
   glUseProgram(_arCamProgram);
   glEnableVertexAttribArray(_arCamPositionAttrib);
   glBindBuffer(GL_ARRAY_BUFFER, _arCamBuffer);

@@ -320,14 +320,6 @@ RCT_NOT_IMPLEMENTED(- (instancetype)init);
   return @{};
 }
 
-- (NSDictionary *)planes
-{
-  if (_arSessionManager) {
-    return [_arSessionManager planes];
-  }
-  return @{};
-}
-
 - (void)setIsPlaneDetectionEnabled:(BOOL)planeDetectionEnabled
 {
   if (_arSessionManager) {
@@ -339,13 +331,6 @@ RCT_NOT_IMPLEMENTED(- (instancetype)init);
 {
   if (_arSessionManager) {
     [_arSessionManager setIsLightEstimationEnabled:lightEstimationEnabled];
-  }
-}
-
-- (void)setWorldAlignment:(NSInteger)worldAlignment
-{
-  if (_arSessionManager) {
-    [_arSessionManager setWorldAlignment:worldAlignment];
   }
 }
 
